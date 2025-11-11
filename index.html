@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seva Sathi</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Splash -->
+  <div id="splash" class="centered">
+    <div class="logo">Seva <span>Sathi</span></div>
+    <div class="loader"></div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <header>
+      <button id="menuBtn" class="hamburger">☰</button>
+      <h1 id="title">Seva Sathi</h1>
+    </header>
+
+    <nav id="sideMenu" class="side hidden">
+      <ul>
+        <li id="settingsBtn">Settings</li>
+        <li id="aboutBtn">About</li>
+        <li id="logoutBtn">Logout</li>
+      </ul>
+    </nav>
+
+    <main id="main">
+      <!-- Sign / Choose role -->
+      <section id="chooseRole" class="card">
+        <h2>Sign up as</h2>
+        <div class="roles">
+          <button id="roleHelper">Helper</button>
+          <button id="roleCustomer">Customer</button>
+        </div>
+      </section>
+
+      <!-- Auth forms -->
+      <section id="auth" class="card hidden">
+        <h2 id="authTitle">Register</h2>
+
+        <div id="emailForm" class="formBlock">
+          <input id="email" type="email" placeholder="Email" />
+          <input id="password" type="password" placeholder="Password" />
+          <button id="emailSignUp">Sign up with Email</button>
+          <button id="emailSignIn">Sign in with Email</button>
+        </div>
+
+        <div id="phoneForm" class="formBlock">
+          <input id="phone" type="tel" placeholder="+91 98765 43210" />
+          <div id="recaptcha-container"></div>
+          <button id="sendOtp">Send OTP</button>
+
+          <div id="otpBlock" class="hidden">
+            <input id="otp" type="text" placeholder="Enter OTP" />
+            <button id="verifyOtp">Verify OTP</button>
+          </div>
+        </div>
+
+        <div class="small">
+          <a href="#" id="forgotBtn">Forgot Password</a>
+        </div>
+      </section>
+
+      <!-- Profile (Helper info) -->
+      <section id="profile" class="card hidden">
+        <h2 id="profileTitle">Complete Profile</h2>
+        <select id="serviceSelect" multiple>
+          <option>Cooking</option><option>Cleaning</option>
+          <option>Repairing</option><option>Other</option>
+        </select>
+        <input id="displayName" placeholder="Your name" />
+        <input id="locationInput" placeholder="Your area / landmark" />
+        <button id="saveProfile">Save Profile</button>
+      </section>
+
+      <!-- Customer view: list of helpers -->
+      <section id="helpersList" class="card hidden">
+        <h2>Helpers near you</h2>
+        <div id="list"></div>
+      </section>
+
+      <!-- Settings modal -->
+      <section id="settings" class="card hidden">
+        <h2>Settings</h2>
+        <div>
+          <label>Theme</label>
+          <select id="themeSelect">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- About modal -->
+      <section id="about" class="card hidden">
+        <h2>About</h2>
+        <p>Seva Sathi — v1.0</p>
+        <p>Find & hire helpers near you.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase SDK (compat, simple to use) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
