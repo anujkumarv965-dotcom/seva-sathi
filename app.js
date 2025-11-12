@@ -1,4 +1,4 @@
-// ====== CONFIG: REPLACE WITH YOUR FIREBASE CONFIG ======
+// ====== CONFIG: REPLACE WITH YOUR_FIREBASE_CONFIG ======
 const firebaseConfig = {
   apiKey: "AIzaSyCjgaTzSx3C6z1eWH4xRAGiHIwVYiRgfrM",
   authDomain: "seva-sathi-49ab3.firebaseapp.com",
@@ -12,173 +12,319 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Simple UI helpers
+// Helpers for UI
 const $ = id => document.getElementById(id);
 const show = el => el.classList.remove('hidden');
 const hide = el => el.classList.add('hidden');
 
-// Splash → app
-setTimeout(()=>{ hide($('splash')); show($('app')); }, 1500);
+// Small utility: Haversine distance in kilometers
+function haversineKm(lat1, lon1, lat2, lon2) {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return Infinity;
+  const R = 6371;
+  const toRad = v => v * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Splash -> app
+setTimeout(() => {
+  hide($('splash'));
+  show($('app'));
+}, 900);
 
 // Menu
-$('menuBtn').onclick = ()=> $('sideMenu').classList.toggle('hidden');
+$('menuBtn').onclick = () => $('sideMenu').classList.toggle('hidden');
 
 // Role selection
 let role = null;
-$('roleHelper').onclick = ()=> { role='helper'; $('chooseRole').classList.add('hidden'); $('auth').classList.remove('hidden'); $('authTitle').innerText = 'Register as Helper'; }
-$('roleCustomer').onclick = ()=> { role='customer'; $('chooseRole').classList.add('hidden'); $('auth').classList.remove('hidden'); $('authTitle').innerText = 'Register as Customer'; }
+$('roleHelper').onclick = () => {
+  role = 'helper';
+  hide($('chooseRole'));
+  show($('auth'));
+  $('authTitle').innerText = 'Register as Helper';
+};
+$('roleCustomer').onclick = () => {
+  role = 'customer';
+  hide($('chooseRole'));
+  show($('auth'));
+  $('authTitle').innerText = 'Register as Customer';
+};
 
 // Email sign up / sign in
-$('emailSignUp').onclick = async ()=>{
-  const email = $('email').value.trim(), pw = $('password').value;
-  if(!email||!pw) return alert('Email and password required');
-  try{
-    const userCred = await auth.createUserWithEmailAndPassword(email,pw);
-    await afterSignIn(userCred.user);
-  }catch(e){ alert(e.message) }
-};
-$('emailSignIn').onclick = async ()=>{
-  const email = $('email').value.trim(), pw = $('password').value;
-  if(!email||!pw) return alert('Email and password required');
-  try{
-    const userCred = await auth.signInWithEmailAndPassword(email,pw);
-    await afterSignIn(userCred.user);
-  }catch(e){ alert(e.message) }
-};
-
-// Phone auth (OTP)
-$('sendOtp').onclick = async ()=>{
-  const phone = $('phone').value.trim();
-  if(!phone) return alert('Enter phone with country code (+91...)');
-  // setup recaptcha (invisible)
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container',{size:'invisible'});
-  try{
-    const confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
-    window.confirmationResult = confirmationResult;
-    $('otpBlock').classList.remove('hidden');
-    alert('OTP sent');
-  }catch(e){ alert('OTP error: '+e.message) }
-};
-$('verifyOtp').onclick = async ()=>{
-  const code = $('otp').value.trim();
-  if(!code) return alert('Enter OTP');
-  try{
-    const res = await window.confirmationResult.confirm(code);
-    await afterSignIn(res.user);
-  }catch(e){ alert('OTP verify error: '+e.message) }
-};
-
-// After sign in: fill role-specific profile or show list
-async function afterSignIn(user){
-  const uid = user.uid;
-  // store basic profile if doesn't exist
-  const userRef = db.collection('users').doc(uid);
-  const doc = await userRef.get();
-  if(!doc.exists){
-    // set base fields
-    await userRef.set({
-      uid, email:user.email||null, phone:user.phoneNumber||null, role:role||'customer',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+$('emailSignUp').onclick = async () => {
+  const email = $('email').value.trim(),
+    pw = $('password').value;
+  if (!email || !pw) return alert('Email and password required');
+  try {
+    const userCred = await auth.createUserWithEmailAndPassword(email, pw);
+    await db.collection('users').doc(userCred.user.uid).set(
+      {
+        role: role || 'customer',
+        email: email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+    await afterSignUp(userCred.user);
+  } catch (e) {
+    alert(e.message);
   }
-  // if helper -> ask to complete profile
-  const uDoc = await userRef.get();
-  const data = uDoc.data();
-  if(data.role === 'helper'){
-    $('auth').classList.add('hidden');
-    $('profile').classList.remove('hidden');
-  }else{
-    // customer view: show helpers near them
-    $('auth').classList.add('hidden');
-    $('helpersList').classList.remove('hidden');
-    showHelpersNearUser();
+};
+$('emailSignIn').onclick = async () => {
+  const email = $('email').value.trim(),
+    pw = $('password').value;
+  if (!email || !pw) return alert('Email and password required');
+  try {
+    const userCred = await auth.signInWithEmailAndPassword(email, pw);
+    await afterSignIn(userCred.user);
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+// After sign-up
+async function afterSignUp(user) {
+  const doc = await db.collection('users').doc(user.uid).get();
+  const data = doc.exists ? doc.data() : {};
+  if ((data.role || role) === 'helper') {
+    hide($('auth'));
+    show($('profile'));
+    if (user.phoneNumber) $('helperPhone').value = user.phoneNumber;
+    if (user.displayName) $('displayName').value = user.displayName;
+  } else {
+    hide($('auth'));
+    show($('helpersList'));
+    getCustomerLocationAndShowHelpers();
   }
 }
 
-// Save profile (for helpers)
-$('saveProfile').onclick = async ()=>{
+// After sign-in
+async function afterSignIn(user) {
+  const ref = db.collection('users').doc(user.uid);
+  const doc = await ref.get();
+  role = doc.exists ? doc.data().role : 'customer';
+  if (role === 'helper') {
+    hide($('auth')); hide($('chooseRole')); hide($('helpersList'));
+    show($('helperDashboard'));
+    renderHelperDashboard(doc.data());
+  } else {
+    hide($('auth')); hide($('chooseRole')); hide($('helperDashboard'));
+    show($('helpersList'));
+    getCustomerLocationAndShowHelpers();
+  }
+}
+
+// Save Helper profile
+$('saveProfile').onclick = async () => {
+  const user = auth.currentUser;
+  if (!user) return alert('Not signed in');
+  const ref = db.collection('users').doc(user.uid);
+
   const name = $('displayName').value.trim();
-  const services = Array.from($('serviceSelect').selectedOptions).map(o=>o.value);
+  const services = [$('serviceSelect').value];
+  const price = $('price').value;
   const location = $('locationInput').value.trim();
-  const user = auth.currentUser;
-  if(!user) return alert('Not signed in');
-  const userRef = db.collection('users').doc(user.uid);
-  await userRef.set({
-    displayName:name, services, location, role:'helper', uid:user.uid, phone:user.phoneNumber||null, email:user.email||null
-  }, {merge:true});
-  alert('Profile saved');
-  $('profile').classList.add('hidden');
-  // go to customer view or helper view
-  if(role==='helper') showHelperDashboard();
+  const phone = $('helperPhone').value.trim();
+
+  let lat = null, lng = null;
+  try {
+    const pos = await getCurrentPositionPromise({ enableHighAccuracy: true, timeout: 7000 });
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+  } catch (err) {}
+
+  await ref.set(
+    {
+      displayName: name,
+      services,
+      price,
+      location,
+      phone,
+      role: 'helper',
+      latitude: lat,
+      longitude: lng,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  alert('Profile saved!');
+  hide($('profile'));
+  show($('helperDashboard'));
+  renderHelperDashboard({ displayName: name, services, price, location, phone });
 };
 
-// Show helper dashboard (simple)
-function showHelperDashboard(){
-  $('main').innerHTML = `<div class="card"><h2>Welcome Helper</h2><p>Profile saved.</p></div>`;
+// Render Helper Dashboard
+function renderHelperDashboard(info) {
+  $('helperInfo').innerHTML = `
+    <h3>${info.displayName || ''}</h3>
+    <p>Service: ${(info.services || []).join(', ')}</p>
+    <p>Price: ${info.price || ''}</p>
+    <p>Location: ${info.location || ''}</p>
+    <p>Phone: ${info.phone || ''}</p>`;
 }
 
-// Show helpers near user (simple text match with location)
-async function showHelpersNearUser(){
-  // Get user saved location (you could use geolocation API for precise distance)
-  const user = auth.currentUser;
-  const uDoc = await db.collection('users').doc(user.uid).get();
-  const userLoc = (uDoc.exists && uDoc.data().location) || '';
-  const list = $('list');
-  list.innerHTML = 'Loading...';
-  const snap = await db.collection('users').where('role','==','helper').get();
-  list.innerHTML = '';
-  snap.forEach(doc=>{
-    const d = doc.data();
-    // very simple proximity: contains same area keyword
-    const near = userLoc && d.location && d.location.toLowerCase().includes(userLoc.split(' ')[0].toLowerCase());
-    const card = document.createElement('div'); card.className='helper';
-    card.innerHTML = `<strong>${d.displayName||'No name'}</strong><div>${(d.services||[]).join(', ')}</div><div>${d.location||''}</div>
-      <button onclick="requestHire('${d.uid}')">Hire</button>`;
-    if(near) card.style.borderLeft='4px solid var(--accent)';
-    list.appendChild(card);
+// Geolocation Promise
+function getCurrentPositionPromise(opt) {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) rej('Geolocation not supported');
+    navigator.geolocation.getCurrentPosition(res, rej, opt);
   });
 }
-window.requestHire = async function(helperUid){
+
+// Show helpers near customer
+async function getCustomerLocationAndShowHelpers() {
+  let lat = null, lng = null;
+  try {
+    const pos = await getCurrentPositionPromise({ enableHighAccuracy: true, timeout: 10000 });
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+  } catch (e) {
+    const manual = prompt('Allow location or type your area name (e.g. "Downtown"):');
+    if (manual) return showHelpersByTextLocation(manual);
+    alert('Location required.');
+    return;
+  }
+
+  const radiusKm = 10;
+  const snap = await db.collection('users').where('role', '==', 'helper').get();
+  const list = $('list');
+  list.innerHTML = '';
+  const helpers = [];
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (!d.latitude || !d.longitude) return;
+    const dist = haversineKm(lat, lng, d.latitude, d.longitude);
+    if (dist <= radiusKm) helpers.push({ ...d, dist });
+  });
+
+  helpers.sort((a, b) => a.dist - b.dist);
+  if (!helpers.length) return (list.innerHTML = `<p>No helpers found within ${radiusKm} km.</p>`);
+
+  helpers.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'helper-card';
+    div.innerHTML = `
+      <h3>${d.displayName || 'No name'}</h3>
+      <p>${(d.services || []).join(', ')}</p>
+      <p>Price: ${d.price || ''}</p>
+      <p>Location: ${d.location || ''}</p>
+      <p>Phone: ${d.phone || ''}</p>
+      <p>Distance: ${d.dist.toFixed(1)} km</p>
+      <button class="btn-primary" onclick="requestHire('${d.uid}')">Hire</button>`;
+    list.appendChild(div);
+  });
+}
+
+// Fallback text search
+async function showHelpersByTextLocation(text) {
+  const list = $('list');
+  const q = text.toLowerCase();
+  const snap = await db.collection('users').where('role', '==', 'helper').get();
+  list.innerHTML = '';
+  snap.forEach(doc => {
+    const d = doc.data();
+    if ((d.location || '').toLowerCase().includes(q)) {
+      const div = document.createElement('div');
+      div.className = 'helper-card';
+      div.innerHTML = `
+        <h3>${d.displayName}</h3>
+        <p>${(d.services || []).join(', ')}</p>
+        <p>Price: ${d.price}</p>
+        <p>Location: ${d.location}</p>
+        <p>Phone: ${d.phone}</p>`;
+      list.appendChild(div);
+    }
+  });
+}
+
+// Hire request
+window.requestHire = async function(helperUid) {
   const user = auth.currentUser;
-  if(!user) return alert('Login first');
-  const hireRef = db.collection('hires').doc();
-  await hireRef.set({ customer:user.uid, helper:helperUid, at: firebase.firestore.FieldValue.serverTimestamp(), status:'requested' });
-  alert('Request sent to helper');
+  if (!user) return alert('Login first');
+  await db.collection('hires').add({
+    customer: user.uid,
+    helper: helperUid,
+    at: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  alert('Request sent!');
+};
+
+// ===== MENU BUTTONS =====
+$('logoutBtn').onclick = () => auth.signOut().then(() => location.reload());
+$('settingsBtn').onclick = () => {
+  hideAll();
+  show($('settings'));
+  $('sideMenu').classList.add('hidden');
+};
+$('aboutBtn').onclick = () => {
+  hideAll();
+  show($('about'));
+  $('sideMenu').classList.add('hidden');
+};
+function hideAll() {
+  ['auth', 'profile', 'helpersList', 'settings', 'about', 'helperDashboard']
+    .forEach(id => $(id).classList.add('hidden'));
 }
 
-// Logout & menu
-$('logoutBtn').onclick = ()=> auth.signOut().then(()=> location.reload());
-$('settingsBtn').onclick = ()=> { hideAll(); $('settings').classList.remove('hidden'); };
-$('aboutBtn').onclick = ()=> { hideAll(); $('about').classList.remove('hidden'); };
-function hideAll(){
-  ['auth','profile','helpersList','settings','about'].forEach(id=>$(id).classList.add('hidden'));
-}
+// ========= THEME TOGGLE WITH MEMORY ========= //
+window.addEventListener('load', () => {
+  const savedTheme = localStorage.getItem('sevaTheme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    $('themeSelect').value = 'dark';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    $('themeSelect').value = 'light';
+  }
+});
 
-// Theme selection
-$('themeSelect').onchange = (e)=>{
-  const v = e.target.value;
-  if(v==='dark') document.documentElement.setAttribute('data-theme','dark');
-  else if(v==='light') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.removeAttribute('data-theme');
+$('themeSelect').onchange = (e) => {
+  const theme = e.target.value;
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('sevaTheme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('sevaTheme', 'light');
+  }
 };
 
 // Forgot password
-$('forgotBtn').onclick = async ()=>{
-  const email = prompt('Enter your account email to reset password');
-  if(!email) return;
-  try{ await auth.sendPasswordResetEmail(email); alert('Password reset sent to email'); } catch(e){ alert(e.message) }
+$('forgotBtn').onclick = async () => {
+  const email = prompt('Enter your account email');
+  if (!email) return;
+  try {
+    await auth.sendPasswordResetEmail(email);
+    alert('Password reset email sent!');
+  } catch (e) {
+    alert(e.message);
+  }
 };
 
-// Auto-auth listener
-auth.onAuthStateChanged(user=>{
-  if(user){
-    // if already logged in, set role from DB then go to app
-    db.collection('users').doc(user.uid).get().then(d=>{
-      if(d.exists && d.data().role==='helper'){ role='helper'; showHelperDashboard(); } 
-      else { role='customer'; $('chooseRole').classList.add('hidden'); $('helpersList').classList.remove('hidden'); showHelpersNearUser(); }
+// Auth listener
+auth.onAuthStateChanged(user => {
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(d => {
+      if (d.exists && d.data().role === 'helper') {
+        role = 'helper';
+        hide($('chooseRole')); hide($('auth')); hide($('helpersList'));
+        show($('helperDashboard'));
+        renderHelperDashboard(d.data());
+      } else {
+        role = 'customer';
+        hide($('chooseRole')); hide($('auth')); hide($('helperDashboard'));
+        show($('helpersList'));
+        getCustomerLocationAndShowHelpers();
+      }
     });
   } else {
-    // show choose role
-    $('chooseRole').classList.remove('hidden');
+    show($('chooseRole'));
   }
 });
