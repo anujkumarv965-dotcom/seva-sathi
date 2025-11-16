@@ -1,0 +1,49 @@
+name: Build Signed APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > sevasathi.jks
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          chmod +x ./gradlew || true
+          ./gradlew assembleRelease || gradle assembleRelease
+
+      - name: Sign APK
+        run: |
+          APK=$(find . -name "*release*.apk" | head -n 1)
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks sevasathi.jks \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+            "$APK"
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SevaSathi-Signed-APK
+          path: |
+            **/*release*.apk￼Enter
