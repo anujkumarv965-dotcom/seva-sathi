@@ -1,2 +1,10 @@
-rootProject.name = "SevaSathi"
-include(":app")
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = "seva-sathi"
+include ':app'
