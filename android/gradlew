@@ -1,39 +1,28 @@
 #!/usr/bin/env sh
 
-##############################################################################
-##
-##  Gradle start up script for UN*X
-##
-##############################################################################
+# -----------------------------------------------------------
+# Working gradlew script for GitHub Actions (UNIX shell)
+# -----------------------------------------------------------
 
-# Attempt to set APP_HOME
-APP_PATH=$(cd "${0%/*}" && pwd)
-APP_HOME=$(cd "$APP_PATH/.." && pwd)
+APP_HOME=$(cd "$(dirname "$0")"; pwd)
 
-# Add default JVM options here
 DEFAULT_JVM_OPTS=""
+JAVA_EXE="java"
 
-# Collect all arguments for the java command
-JAVA_OPTS=""
-for arg in "$@"; do
-    JAVA_OPTS="$JAVA_OPTS \"$arg\""
-done
-
-# Find Java
+# If JAVA_HOME exists, use it
 if [ -n "$JAVA_HOME" ] ; then
-    if [ -x "$JAVA_HOME/bin/java" ] ; then
-        JAVACMD="$JAVA_HOME/bin/java"
-    else
-        echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
-        exit 1
-    fi
-else
-    JAVACMD=$(command -v java)
-    if [ -z "$JAVACMD" ] ; then
-        echo "ERROR: Java is not installed and JAVA_HOME is not set." >&2
-        exit 1
-    fi
+  JAVA_EXE="$JAVA_HOME/bin/java"
 fi
 
-# Execute Gradle
-exec "$JAVACMD" $DEFAULT_JVM_OPTS -Dorg.gradle.appname=gradlew -classpath "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain $JAVA_OPTS
+# Check that Java really exists
+if ! command -v "$JAVA_EXE" >/dev/null 2>&1 ; then
+  echo "ERROR: Java not found."
+  exit 1
+fi
+
+# Run Gradle Wrapper
+exec "$JAVA_EXE" \
+  $DEFAULT_JVM_OPTS \
+  -Dorg.gradle.appname=gradlew \
+  -classpath "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+  org.gradle.wrapper.GradleWrapperMain "$@"
