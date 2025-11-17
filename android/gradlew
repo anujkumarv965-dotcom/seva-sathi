@@ -1,0 +1,40 @@
+
+#!/usr/bin/env sh
+
+##############################################################################
+##
+##  Gradle start up script for UN*X
+##
+##############################################################################
+
+# Attempt to set APP_HOME
+APP_PATH=$(cd "${0%/*}" && pwd)
+APP_HOME=$(cd "$APP_PATH/.." && pwd)
+
+# Add default JVM options here
+DEFAULT_JVM_OPTS=""
+
+# Collect all arguments for the java command
+JAVA_OPTS=""
+for arg in "$@"; do
+    JAVA_OPTS="$JAVA_OPTS \"$arg\""
+done
+
+# Find Java
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/bin/java" ] ; then
+        JAVACMD="$JAVA_HOME/bin/java"
+    else
+        echo "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME" >&2
+        exit 1
+    fi
+else
+    JAVACMD=$(command -v java)
+    if [ -z "$JAVACMD" ] ; then
+        echo "ERROR: Java is not installed and JAVA_HOME is not set." >&2
+        exit 1
+    fi
+fi
+
+# Execute Gradle
+exec "$JAVACMD" $DEFAULT_JVM_OPTS -Dorg.gradle.appname=gradlew -classpath "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain $JAVA_OPTS
