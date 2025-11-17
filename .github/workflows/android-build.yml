@@ -1,49 +1,56 @@
-name: Build Signed APK
+name: Build & Sign APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
 
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > sevasathi.jks
+    - name: Install Android SDK tools
+      run: |
+        sudo mkdir -p /usr/local/lib/android
+        sudo chown $USER /usr/local/lib/android
+        curl -sS https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -o cmdline.zip
+        unzip cmdline.zip -d $HOME/cmdline-tools
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        mv $HOME/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+    - name: Grant execute permission to gradlew
+      run: chmod +x ./gradlew
 
-      - name: Build APK
-        run: |
-          chmod +x ./gradlew || true
-          ./gradlew assembleRelease || gradle assembleRelease
+    - name: Decode keystore
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > seva-keystore.jks
 
-      - name: Sign APK
-        run: |
-          APK=$(find . -name "*release*.apk" | head -n 1)
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks sevasathi.jks \
-            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
-            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
-            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
-            "$APK"
+    - name: Build release APK
+      run: ./gradlew assembleRelease
 
-      - name: Upload signed APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: SevaSathi-Signed-APK
-          path: |
-            **/*release*.apk￼Enter
+    - name: Sign APK
+      uses: r0adkll/sign-android-release@v1
+      with:
+        releaseDirectory: app/build/outputs/apk/release
+        signingKey: ${{ secrets.KEYSTORE_BASE64 }}
+        alias: ${{ secrets.KEY_ALIAS }}
+        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+    - name: Upload Signed APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: SevaSathi-Signed-APK
+        path: app/build/outputs/apk/release/*.apk
