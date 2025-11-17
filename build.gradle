@@ -1,9 +1,9 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.application' version '8.1.2'
 }
 
 android {
-    namespace "com.sevasathi.app"
+    namespace 'com.sevasathi.app'
     compileSdk 34
 
     defaultConfig {
@@ -20,4 +20,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+dependencies {
 }
