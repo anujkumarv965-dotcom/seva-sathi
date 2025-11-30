@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seva Sathi</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- PWA REQUIRED -->
+  <meta name="theme-color" content="#30003C" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- PWA ICONS -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">
+
+  <!-- Leaflet MAP LIBRARY -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+</head>
+<body>
+  <div id="splash" class="centered">
+    <div class="logo">Seva <span>Sathi</span></div>
+    <div class="loader"></div>
+  </div>
+
+  <div id="app" class="hidden">
+    <header>
+      <button id="menuBtn" class="hamburger">☰</button>
+      <h1>Seva Sathi</h1>
+    </header>
+
+    <nav id="sideMenu" class="side hidden">
+      <ul>
+        <li id="settingsBtn">Settings</li>
+        <li id="aboutBtn">About</li>
+        <li id="logoutBtn">Logout</li>
+      </ul>
+    </nav>
+
+    <main id="main">
+
+      <section id="chooseRole" class="card">
+        <h2>Sign up as</h2>
+        <div class="roles">
+          <button id="roleHelper" class="btn-primary">Helper</button>
+          <button id="roleCustomer" class="btn-secondary">Customer</button>
+        </div>
+      </section>
+
+      <section id="auth" class="card hidden">
+        <h2 id="authTitle">Register</h2>
+        <input id="email" type="email" placeholder="Email" />
+        <input id="password" type="password" placeholder="Password" />
+        <div class="row">
+          <button id="emailSignUp" class="btn-primary">Sign up</button>
+          <button id="emailSignIn" class="btn-outline">Sign in</button>
+        </div>
+        <div class="small"><a href="#" id="forgotBtn">Forgot Password</a></div>
+      </section>
+
+      <section id="profile" class="card hidden">
+        <h2>Complete Helper Profile</h2>
+        <label>Service provided</label>
+        <select id="serviceSelect">
+          <option>Cooking</option>
+          <option>Cleaning</option>
+          <option>Repairing</option>
+          <option>Other</option>
+        </select>
+        <label>Full name</label>
+        <input id="displayName" />
+        <label>Price</label>
+        <input id="price" type="number" />
+        <label>Location</label>
+        <input id="locationInput" />
+        <label>Phone number</label>
+        <input id="helperPhone" />
+
+        <label>Upload profile photo</label>
+        <input id="photoUpload" type="file" accept="image/*" />
+        <img id="photoPreview" class="avatar" style="display:none;margin-top:8px;" />
+
+        <button id="saveProfile" class="btn-primary">Save Profile</button>
+      </section>
+
+      <!-- LIST VIEW -->
+      <section id="helpersList" class="card hidden">
+        <h2>Helpers near you</h2>
+
+        <!-- Filter box: choose All, Within radius, By text -->
+        <div id="filterBox" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <select id="filterMode" style="padding:8px;border-radius:8px;border:1px solid #ddd;">
+            <option value="all">Show all</option>
+            <option value="radius">Within radius (km)</option>
+            <option value="text">By place / text</option>
+          </select>
+
+          <input id="radiusInput" type="number" placeholder="km (e.g. 10)" style="width:110px;padding:8px;border-radius:8px;border:1px solid #ddd;display:none;" />
+
+          <input id="filterText" placeholder="Type area or PIN" style="padding:8px;border-radius:8px;border:1px solid #ddd;display:none;" />
+
+          <button id="applyFilterBtn" class="btn-outline" style="padding:8px 12px;">Apply</button>
+
+          <button id="viewMapBtn" class="btn-primary" style="margin-left:auto;">
+            View Map
+          </button>
+        </div>
+
+        <div id="list"></div>
+      </section>
+
+      <!-- MAP VIEW -->
+      <section id="mapSection" class="card hidden">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <button id="backToListBtn" class="btn-outline">← Back to List</button>
+          <select id="mapFilterMode" style="padding:8px;border-radius:8px;border:1px solid #ddd;">
+            <option value="all">Show all</option>
+            <option value="radius">Within radius (km)</option>
+            <option value="text">By place / text</option>
+          </select>
+          <input id="mapRadiusInput" type="number" placeholder="km" style="width:100px;padding:8px;border-radius:8px;border:1px solid #ddd;display:none;" />
+          <input id="mapFilterText" placeholder="Type area or PIN" style="padding:8px;border-radius:8px;border:1px solid #ddd;display:none;" />
+          <button id="mapApplyBtn" class="btn-outline">Apply</button>
+        </div>
+
+        <div id="map" style="width:100%;height:420px;border-radius:12px;"></div>
+      </section>
+
+      <section id="helperDashboard" class="card hidden">
+        <h2>Helper Dashboard</h2>
+        <div id="helperInfo"></div>
+      </section>
+
+      <section id="settings" class="card hidden">
+        <h2>Settings</h2>
+        <label>Theme</label>
+        <select id="themeSelect">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </section>
+
+      <section id="about" class="card hidden">
+        <h2>About</h2>
+        <p>Seva Sathi v1.0 – Find & hire helpers near you.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+  <!-- LEAFLET -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
