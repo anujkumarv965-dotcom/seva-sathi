@@ -1,0 +1,192 @@
+:root{
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --text:#111;
+  --accent:#6c63ff;
+  --accent2:#5b8cff;
+}
+
+[data-theme="dark"]{
+  --bg:#0f1115;
+  --card:#181b20;
+  --text:#e8eef6;
+}
+
+body{
+  margin:0;
+  background:linear-gradient(135deg,#eef2ff,#f9fbff);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui;
+  min-height:100vh;
+}
+
+.centered{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+.hidden{display:none}
+
+/* Splash */
+.logo{
+  font-size:2.6rem;
+  font-weight:800;
+}
+.logo span{
+  color:var(--accent);
+}
+.loader{
+  height:6px;
+  width:120px;
+  background:linear-gradient(90deg,var(--accent),transparent);
+  margin-top:12px;
+  border-radius:8px;
+  animation:move 1.2s infinite;
+}
+@keyframes move{
+  0%{transform:translateX(-40px)}
+  50%{transform:translateX(40px)}
+  100%{transform:translateX(-40px)}
+}
+
+/* Header */
+header{
+  display:flex;
+  align-items:center;
+  padding:14px;
+  background:linear-gradient(90deg,#6c63ff,#5b8cff);
+  color:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,0.15);
+}
+header h1{
+  margin:0;
+  font-size:18px;
+}
+.hamburger{
+  font-size:20px;
+  margin-right:10px;
+  background:none;
+  border:none;
+  color:white;
+}
+
+/* Layout */
+main{
+  padding:16px;
+}
+
+/* Cards */
+.card{
+  background:var(--card);
+  padding:16px;
+  border-radius:16px;
+  margin-bottom:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.06);
+  transition:0.3s;
+}
+.card:hover{
+  transform:translateY(-2px);
+}
+
+/* Inputs */
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  background:#fafafa;
+  font-size:14px;
+  margin:8px 0;
+}
+
+/* Buttons */
+button{
+  cursor:pointer;
+  transition:0.2s;
+}
+button:hover{
+  transform:scale(1.03);
+}
+
+.btn-primary{
+  background:linear-gradient(90deg,#6c63ff,#5b8cff);
+  color:#fff;
+  border:none;
+  padding:12px;
+  border-radius:12px;
+  font-weight:700;
+}
+
+.btn-secondary{
+  background:linear-gradient(90deg,#34d399,#10b981);
+  color:#fff;
+  border:none;
+  padding:12px;
+  border-radius:12px;
+  font-weight:700;
+}
+
+.btn-outline{
+  border:2px solid var(--accent);
+  background:transparent;
+  color:var(--accent);
+  padding:10px;
+  border-radius:12px;
+}
+
+/* Helper Cards */
+.helper-card{
+  display:flex;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  background:linear-gradient(180deg,#ffffff,#f8faff);
+  box-shadow:0 6px 20px rgba(0,0,0,0.05);
+}
+
+/* Avatar */
+.avatar{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  border:3px solid #fff;
+}
+
+/* Chat */
+.chat-msg{
+  padding:10px 14px;
+  border-radius:14px;
+  margin:6px 0;
+  max-width:75%;
+}
+.chat-me{
+  background:#6c63ff;
+  color:#fff;
+  margin-left:auto;
+}
+.chat-them{
+  background:#eee;
+}
+
+/* Booking Cards */
+.booking-card{
+  border-radius:14px;
+  padding:12px;
+  background:#fff;
+  box-shadow:0 8px 25px rgba(0,0,0,0.05);
+}
+
+/* Pills */
+.pill{
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:700;
+}
+.pill-accepted{background:#dcfce7;color:#15803d;}
+.pill-rejected{background:#fee2e2;color:#b91c1c;}
+.pill-completed{background:#e0f2fe;color:#0369a1;}
+.pill-cancelled{background:#f1f5f9;color:#555;}
+.pill-requested{background:#fff7ed;color:#c2410c;}
